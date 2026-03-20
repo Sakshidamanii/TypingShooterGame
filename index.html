@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Expenses Tracker – Web</title>
+    <style>
+        :root {
+            --primary: #4338ca;
+            --primary-light: #6366f1;
+            --primary-dark: #312e81;
+            --accent: #ec4899;
+            --accent-light: #f472b6;
+            --success: #22c55e;
+            --success-light: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --danger-light: #fca5a5;
+            --bg-main: #f0f2f5;
+            --bg-card: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --table-header-bg: #6366f1;
+            --table-header-fg: #ffffff;
+            --table-row-even: #f9fafb;
+            --table-row-odd: #eff6ff;
+            --table-selected: #c7d2fe;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg-main);
+            color: var(--text-primary);
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin: 0;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* Top header */
+        .header {
+            padding: 15px 20px;
+            background: linear-gradient(180deg, var(--primary), var(--primary-light));
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .header-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header label {
+            font-size: 14px;
+            margin-right: 4px;
+        }
+
+        .header input,
+        .header select {
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        /* Layout */
+        .main {
+            padding: 10px 15px;
+            display: grid;
+            grid-template-columns: minmax(0, 2.8fr) minmax(260px, 1.2fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, .08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 4px;
+            font-size: 14px;
+        }
+
+        thead th {
+            background: var(--table-header-bg);
+            color: var(--table-header-fg);
+            font-weight: 600;
+            padding: 8px;
+            text-align: left;
+        }
+
+        tbody tr {
+            background: var(--table-row-even);
+        }
+
+        tbody tr:nth-child(odd) {
+            background: var(--table-row-odd);
+        }
+
+        tbody tr.selected {
+            background: var(--table-selected) !important;
+        }
+
+        td {
+            padding: 6px 8px;
+            border-top: 1px solid rgba(148, 163, 184, .3);
+            border-bottom: 1px solid rgba(148, 163, 184, .3);
+        }
+
+        td.amount {
+            text-align: right;
+            font-family: "Consolas", monospace;
+            font-weight: 600;
+        }
+
+        td.category-badge {
+            font-weight: 600;
+        }
+
+        /* Bottom controls */
+        .bottom-bar {
+            background: linear-gradient(180deg, #f9fafb, #f3f4f6);
+            padding: 8px 15px 12px 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 18px;
+            border: none;
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .2);
+            transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.08);
+            box-shadow: 0 3px 6px rgba(15, 23, 42, .25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        }
+
+        .btn-info {
+            background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+        }
+
+        .btn-danger {
+            background: linear-gradient(90deg, var(--danger), var(--danger-light));
+        }
+
+        .btn-violet {
+            background: linear-gradient(90deg, #8b5cf6, #a855f7);
+        }
+
+        .btn-warning {
+            background: linear-gradient(90deg, var(--warning), #fde047);
+            color: #111827;
+        }
+
+        .btn-teal {
+            background: linear-gradient(90deg, #14b8a6, #2dd4bf);
+        }
+
+        /* Filter select at bottom */
+        .filter-select {
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            margin-top: -8px;
+            margin-bottom: 0;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-weight: 600;
+        }
+
+        .stat-value.green {
+            color: var(--success);
+        }
+
+        .stat-value.red {
+            color: var(--danger);
+        }
+
+        /* Circular progress */
+        .circle-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: -8px;
+            margin-top: -4px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* Pie & legend */
+        .pie-wrapper {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .pie-legend {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .pie-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+        }
+
+        /* Dialog */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 10px;
+            padding: 14px 16px 16px 16px;
+            width: 310px;
+            max-width: 90vw;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, .25);
+        }
+
+        .modal h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: var(--primary-dark);
+        }
+
+        .modal-form {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .modal label {
+            font-size: 13px;
+            color: var(--primary-dark);
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .modal input,
+        .modal select {
+            width: 100%;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        /* Toast (simple) */
+        .toast {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            background: #111827;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(8px);
+            transition: opacity .15s ease, transform .15s ease;
+            z-index: 100;
+        }
+
+        .toast.show {
+            opacity: 0.95;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="header-title">💰 Expenses Tracker (Web)</div>
+        </div>
+        <div class="header-controls">
+            <label for="currencySelect">Currency:</label>
+            <select id="currencySelect">
+                <option value="INR">₹ Indian Rupee</option>
+                <option value="USD">$ US Dollar</option>
+                <option value="EUR">€ Euro</option>
+                <option value="GBP">£ British Pound</option>
+                <option value="JPY">¥ Japanese Yen</option>
+                <option value="AUD">A$ Australian Dollar</option>
+                <option value="CAD">C$ Canadian Dollar</option>
+                <option value="CNY">¥ Chinese Yuan</option>
+                <option value="CHF">Fr Swiss Franc</option>
+                <option value="SGD">S$ Singapore Dollar</option>
+            </select>
+
+            <label for="budgetInput">Budget:</label>
+            <input id="budgetInput" type="number" min="0" step="0.01" style="width: 110px;">
+            <button id="setBudgetBtn" class="btn btn-success btn-primary" style="padding: 6px 12px;">Set Budget</button>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="main">
+        <!-- Left: table -->
+        <section class="card">
+            <h3>📋 Expenses</h3>
+            <table id="expensesTable">
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">Date</th>
+                        <th>Description</th>
+                        <th style="width: 120px;">Category</th>
+                        <th style="width: 110px; text-align:right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Right: stats & pie -->
+        <section style="display:flex; flex-direction:column; gap:10px;">
+            <div class="card">
+                <h3>📊 Budget Overview</h3>
+                <div class="circle-wrapper">
+                    <canvas id="circleCanvas" width="180" height="180"></canvas>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Spent:</div>
+                        <div id="totalLabel" class="stat-value"></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Budget:</div>
+                        <div id="budgetLabel" class="stat-value"></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Remaining / Over:</div>
+                        <div id="remainingLabel" class="stat-value"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🥧 Category Breakdown</h3>
+                <div class="pie-wrapper">
+                    <canvas id="pieCanvas" width="130" height="130"></canvas>
+                    <div id="pieLegend" class="pie-legend"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom bar -->
+    <div class="bottom-bar">
+        <button id="addBtn" class="btn btn-primary">➕ Add Expense</button>
+        <button id="editBtn" class="btn btn-info">✏️ Edit</button>
+        <button id="deleteBtn" class="btn btn-danger">🗑️ Delete</button>
+        <button id="viewAllBtn" class="btn btn-violet">📋 View All</button>
+
+        <span style="margin-left:8px; font-size:13px; color:var(--text-secondary);">Filter:</span>
+        <select id="categoryFilter" class="filter-select">
+            <option value="All">All</option>
+            <option value="Food">Food</option>
+            <option value="Transport">Transport</option>
+            <option value="Utilities">Utilities</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <button id="totalBtn" class="btn btn-warning">💲 Total</button>
+        <button id="saveBtn" class="btn btn-teal">💾 Save Snapshot</button>
+    </div>
+
+    <!-- Modal for Add/Edit -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modalTitle">Add Expense</h3>
+            <div class="modal-form">
+                <div>
+                    <label for="descInput">📝 Description</label>
+                    <input id="descInput" type="text">
+                </div>
+                <div>
+                    <label for="amountInput">💲 Amount (<span id="currencyLabel">₹</span>)</label>
+                    <input id="amountInput" type="number" step="0.01" min="0">
+                </div>
+                <div>
+                    <label for="categoryInput">📂 Category</label>
+                    <select id="categoryInput">
+                        <option value="Food">Food</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="cancelModalBtn" class="btn btn-danger" style="padding:4px 10px;">Cancel</button>
+                <button id="okModalBtn" class="btn btn-primary" style="padding:4px 10px;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // --- Currency map (symbol only; you can extend) ---
+        const CURRENCIES = {
+            INR: "₹",
+            USD: "$",
+            EUR: "€",
+            GBP: "£",
+            JPY: "¥",
+            AUD: "A$",
+            CAD: "C$",
+            CNY: "¥",
+            CHF: "Fr",
+            SGD: "S$"
+        };
+
+        // --- Category colors (for table & pie) ---
+        const CATEGORY_COLORS = {
+            Food: "#f97316",
+            Transport: "#3b82f6",
+            Utilities: "#a855f7",
+            Entertainment: "#ec4899",
+            Other: "#6b7280"
+        };
+
+        // --- State ---
+        let expenses = []; // {id, description, amount, date, category}
+        let budget = 0;
+        let selectedCurrency = "INR"; // default = Rupees
+        let selectedRowId = null;
+        let modalMode = "add"; // 'add' or 'edit'
+        let editId = null;
+
+        // --- DOM References ---
+        const tbody = document.querySelector("#expensesTable tbody");
+        const currencySelect = document.getElementById("currencySelect");
+        const budgetInput = document.getElementById("budgetInput");
+        const setBudgetBtn = document.getElementById("setBudgetBtn");
+
+        const totalLabel = document.getElementById("totalLabel");
+        const budgetLabel = document.getElementById("budgetLabel");
+        const remainingLabel = document.getElementById("remainingLabel");
+
+        const circleCanvas = document.getElementById("circleCanvas");
+        const circleCtx = circleCanvas.getContext("2d");
+        const pieCanvas = document.getElementById("pieCanvas");
+        const pieCtx = pieCanvas.getContext("2d");
+        const pieLegend = document.getElementById("pieLegend");
+
+        const addBtn = document.getElementById("addBtn");
+        const editBtn = document.getElementById("editBtn");
+        const deleteBtn = document.getElementById("deleteBtn");
+        const viewAllBtn = document.getElementById("viewAllBtn");
+        const categoryFilter = document.getElementById("categoryFilter");
+        const totalBtn = document.getElementById("totalBtn");
+        const saveBtn = document.getElementById("saveBtn");
+
+        const modalOverlay = document.getElementById("modalOverlay");
+        const modalTitle = document.getElementById("modalTitle");
+        const descInput = document.getElementById("descInput");
+        const amountInput = document.getElementById("amountInput");
+        const categoryInput = document.getElementById("categoryInput");
+        const currencyLabel = document.getElementById("currencyLabel");
+        const cancelModalBtn = document.getElementById("cancelModalBtn");
+        const okModalBtn = document.getElementById("okModalBtn");
+        const toastEl = document.getElementById("toast");
+
+        // --- Helpers ---
+        const fmt = (val) => CURRENCIES[selectedCurrency] + val.toFixed(2);
+        const showToast = (msg) => {
+            toastEl.textContent = msg;
+            toastEl.classList.add("show");
+            setTimeout(() => toastEl.classList.remove("show"), 1800);
+        };
+        const showAlert = (msg) => alert(msg);
+
+        // --- Data Persistence (localStorage) ---
+        function loadData() {
+            try {
+                const raw = localStorage.getItem("expensesTrackerData");
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    expenses = parsed.expenses || [];
+                    budget = parsed.budget || 0;
+                    selectedCurrency = parsed.currency || "INR";
+                }
+            } catch (e) {
+                expenses = [];
+                budget = 0;
+                selectedCurrency = "INR";
+            }
+        }
+
+        function saveDataSnapshot() {
+            const data = {
+                expenses,
+                budget,
+                currency: selectedCurrency
+            };
+            localStorage.setItem("expensesTrackerData", JSON.stringify(data));
+            showToast("Snapshot saved (localStorage)");
+        }
+
+        // --- Rendering ---
+        function renderTable(list) {
+            tbody.innerHTML = "";
+            const formatter = new Intl.DateTimeFormat("en-GB"); // dd/MM/yyyy
+            list.forEach(exp => {
+                const tr = document.createElement("tr");
+                tr.dataset.id = exp.id;
+                if (exp.id === selectedRowId) tr.classList.add("selected");
+
+                const tdDate = document.createElement("td");
+                tdDate.textContent = formatter.format(new Date(exp.date));
+                tr.appendChild(tdDate);
+
+                const tdDesc = document.createElement("td");
+                tdDesc.textContent = exp.description;
+                tr.appendChild(tdDesc);
+
+                const tdCat = document.createElement("td");
+                tdCat.textContent = exp.category;
+                tdCat.classList.add("category-badge");
+                tdCat.style.color = CATEGORY_COLORS[exp.category] || "#4b5563";
+                tr.appendChild(tdCat);
+
+                const tdAmount = document.createElement("td");
+                tdAmount.textContent = fmt(Number(exp.amount));
+                tdAmount.classList.add("amount");
+                tdAmount.style.color = CATEGORY_COLORS[exp.category] || "#111827";
+                tr.appendChild(tdAmount);
+
+                tr.addEventListener("click", () => {
+                    selectedRowId = exp.id;
+                    renderTable(getFilteredExpenses());
+                });
+                tr.addEventListener("dblclick", () => {
+                    selectedRowId = exp.id;
+                    openEditModal(exp.id);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getFilteredExpenses() {
+            const f = categoryFilter.value;
+            if (f === "All") return expenses;
+            return expenses.filter(e => e.category === f);
+        }
+
+        function updateStatsAndCharts() {
+            const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+            const remaining = budget - total;
+            totalLabel.textContent = fmt(total);
+            budgetLabel.textContent = fmt(budget);
+
+            remainingLabel.textContent = fmt(Math.abs(remaining));
+            remainingLabel.classList.remove("green", "red");
+            if (remaining >= 0) remainingLabel.classList.add("green");
+            else remainingLabel.classList.add("red");
+
+            drawCircle(total, budget);
+            drawPie();
+        }
+
+        function drawCircle(total, budgetVal) {
+            const ctx = circleCtx;
+            const w = circleCanvas.width;
+            const h = circleCanvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const cx = w / 2;
+            const cy = h / 2;
+            const r = Math.min(w, h) / 2 - 15;
+            const lineWidth = 16;
+
+            // Background ring
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = "#e5e7eb";
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.stroke();
+
+            let pct = 0;
+            if (budgetVal > 0) {
+                pct = Math.min(100, (total / budgetVal) * 100);
+            }
+
+            // Color based on pct
+            let c1, c2;
+            if (pct < 50) {
+                c1 = "#22c55e"; c2 = "#22d3ee";
+            } else if (pct < 80) {
+                c1 = "#22d3ee"; c2 = "#facc15";
+            } else if (pct < 100) {
+                c1 = "#facc15"; c2 = "#ef4444";
+            } else {
+                c1 = "#ef4444"; c2 = "#b91c1c";
+            }
+
+            const grad = ctx.createLinearGradient(0, 0, w, h);
+            grad.addColorStop(0, c1);
+            grad.addColorStop(1, c2);
+            ctx.strokeStyle = grad;
+
+            const start = -Math.PI / 2;
+            const end = start + (pct / 100) * Math.PI * 2;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, start, end);
+            ctx.stroke();
+
+            // Text
+            ctx.fillStyle = "#111827";
+            ctx.font = "bold 20px 'Segoe UI'";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(`${Math.round(pct)}%`, cx, cy - 6);
+
+            ctx.font = "12px 'Segoe UI'";
+            ctx.fillStyle = "#6b7280";
+            ctx.fillText(fmt(total), cx, cy + 12);
+        }
+
+        function drawPie() {
+            const ctx = pieCtx;
+            const w = pieCanvas.width;
+            const h = pieCanvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const cx = w / 2;
+            const cy = h / 2;
+            const r = Math.min(w, h) / 2 - 5;
+
+            const totals = {};
+            expenses.forEach(e => {
+                totals[e.category] = (totals[e.category] || 0) + Number(e.amount);
+            });
+            const categories = Object.keys(totals);
+            const totalSum = Object.values(totals).reduce((s, v) => s + v, 0);
+
+            pieLegend.innerHTML = "";
+
+            if (!totalSum) {
+                ctx.fillStyle = "#9ca3af";
+                ctx.font = "13px 'Segoe UI'";
+                ctx.textAlign = "center";
+                ctx.fillText("No data", cx, cy);
+                return;
+            }
+
+            let startAngle = -Math.PI / 2;
+            categories.forEach(cat => {
+                const val = totals[cat];
+                const angle = (val / totalSum) * Math.PI * 2;
+                const endAngle = startAngle + angle;
+                const color = CATEGORY_COLORS[cat] || "#6b7280";
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.fillStyle = color;
+                ctx.arc(cx, cy, r, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fill();
+
+                const pct = (val / totalSum) * 100;
+
+                // Legend
+                const item = document.createElement("div");
+                item.className = "pie-legend-item";
+                const dot = document.createElement("div");
+                dot.className = "dot";
+                dot.style.backgroundColor = color;
+                const text = document.createElement("span");
+                text.textContent = `${cat} ${pct.toFixed(0)}%`;
+                item.appendChild(dot);
+                item.appendChild(text);
+                pieLegend.appendChild(item);
+
+                startAngle = endAngle;
+            });
+        }
+
+        function refreshAll() {
+            budgetInput.value = budget.toString();
+            currencySelect.value = selectedCurrency;
+            currencyLabel.textContent = CURRENCIES[selectedCurrency];
+            renderTable(getFilteredExpenses());
+            updateStatsAndCharts();
+        }
+
+        // --- Modal logic ---
+        function openAddModal() {
+            modalMode = "add";
+            modalTitle.textContent = "Add Expense";
+            descInput.value = "";
+            amountInput.value = "";
+            categoryInput.value = "Food";
+            currencyLabel.textContent = CURRENCIES[selectedCurrency];
+            modalOverlay.style.display = "flex";
+            descInput.focus();
+        }
+
+        function openEditModal(id) {
+            const exp = expenses.find(e => e.id === id);
+            if (!exp) return;
+            modalMode = "edit";
+            editId = id;
+            modalTitle.textContent = "Edit Expense";
+            descInput.value = exp.description;
+            amountInput.value = exp.amount;
+            categoryInput.value = exp.category;
+            currencyLabel.textContent = CURRENCIES[selectedCurrency];
+            modalOverlay.style.display = "flex";
+            descInput.focus();
+        }
+
+        function closeModal() {
+            modalOverlay.style.display = "none";
+        }
+
+        function submitModal() {
+            const desc = descInput.value.trim();
+            const amountVal = parseFloat(amountInput.value);
+            const cat = categoryInput.value;
+
+            if (!desc) { showAlert("Description cannot be empty!"); return; }
+            if (!(amountVal > 0)) { showAlert("Amount must be positive!"); return; }
+
+            if (modalMode === "add") {
+                const newExp = {
+                    id: Date.now(),
+                    description: desc,
+                    amount: amountVal,
+                    date: new Date().toISOString(),
+                    category: cat
+                };
+                expenses.push(newExp);
+                showToast("Expense added");
+            } else if (modalMode === "edit") {
+                const exp = expenses.find(e => e.id === editId);
+                if (exp) {
+                    exp.description = desc;
+                    exp.amount = amountVal;
+                    exp.category = cat;
+                    showToast("Expense updated");
+                }
+            }
+            closeModal();
+            refreshAll();
+        }
+
+        // --- Event Listeners ---
+        setBudgetBtn.addEventListener("click", () => {
+            const val = parseFloat(budgetInput.value);
+            if (isNaN(val) || val < 0) {
+                showAlert("Budget must be a non-negative number.");
+                return;
+            }
+            budget = val;
+            showToast("Budget set");
+            refreshAll();
+        });
+
+        currencySelect.addEventListener("change", () => {
+            selectedCurrency = currencySelect.value;
+            currencyLabel.textContent = CURRENCIES[selectedCurrency];
+            refreshAll();
+        });
+
+        addBtn.addEventListener("click", openAddModal);
+        editBtn.addEventListener("click", () => {
+            if (!selectedRowId) { showAlert("Select an expense to edit."); return; }
+            openEditModal(selectedRowId);
+        });
+        deleteBtn.addEventListener("click", () => {
+            if (!selectedRowId) { showAlert("Select an expense to delete."); return; }
+            if (confirm("Are you sure you want to delete this expense?")) {
+                expenses = expenses.filter(e => e.id !== selectedRowId);
+                selectedRowId = null;
+                refreshAll();
+                showToast("Expense deleted");
+            }
+        });
+        viewAllBtn.addEventListener("click", () => {
+            categoryFilter.value = "All";
+            renderTable(expenses);
+        });
+        categoryFilter.addEventListener("change", () => {
+            selectedRowId = null;
+            renderTable(getFilteredExpenses());
+        });
+
+        totalBtn.addEventListener("click", () => {
+            const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+            alert("Total expenses: " + fmt(total));
+        });
+        saveBtn.addEventListener("click", saveDataSnapshot);
+
+        cancelModalBtn.addEventListener("click", closeModal);
+        okModalBtn.addEventListener("click", submitModal);
+        modalOverlay.addEventListener("click", (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && modalOverlay.style.display === "flex") {
+                closeModal();
+            }
+        });
+
+        // --- Init ---
+        loadData();
+        refreshAll();
+    </script>
+</body>
+
+</html>
